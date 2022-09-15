@@ -1,0 +1,194 @@
+$(function () {
+  window.classrooms = [];
+  var fetchClassrooms = function (params, callback) {
+    if (_.isEmpty(window.classrooms)) {
+      $.getJSON(Routes.classrooms_pt_br_path(params)).always(function (data) {
+        window.classrooms = data;
+        callback(window.classrooms);
+      });
+    } else {
+      callback(window.classrooms);
+    }
+  };
+
+  window.disciplines = [];
+  var fetchDisciplines = function (params, callback) {
+    if (_.isEmpty(window.disciplines)) {
+      $.getJSON('/disciplinas?' + $.param(params)).always(function (data) {
+        window.disciplines = data;
+        callback(window.disciplines);
+      });
+    } else {
+      callback(window.disciplines);
+    }
+  };
+
+  window.testSettingTests = []
+  var fetchTestSettingTests = function (params, callback) {
+    if (_.isEmpty(window.testSettingTests)) {
+      $.getJSON('/test_setting_tests?' + $.param(params)).always(function (data) {
+        window.testSettingTests = data.test_setting_tests;
+        callback(window.testSettingTests);
+      });
+    } else {
+      callback(window.testSettingTests);
+    }
+  };
+
+  $('#avaliation_unity_id').on('change', function (e) {
+    var $classroom = $('#avaliation_classroom_id'),
+        params = {
+          filter: {
+            by_unity: e.val
+          },
+          find_by_current_teacher: true
+        };
+
+    window.classrooms = [];
+
+    if (_.isEmpty(e.val)) {
+      $classroom.val('');
+      $classroom.select2({
+        data: []
+      });
+
+    } else {
+      fetchClassrooms(params, function (classrooms) {
+        var selectedClassrooms = _.map(classrooms, function (classroom) {
+          return { id:classroom['id'], text: classroom['description'] };
+        });
+
+        $classroom.select2({
+          data: selectedClassrooms
+        });
+      });
+    }
+  });
+
+  $('#avaliation_classroom_id').on('change', function (e) {
+    var $discipline = $('#avaliation_discipline_id'),
+        params = {
+          classroom_id: e.val
+        };
+    window.disciplines = [];
+
+    if (_.isEmpty(e.val)) {
+      $discipline.val('');
+      $discipline.select2({
+        data: []
+      });
+
+    } else {
+      fetchDisciplines(params, function (disciplines) {
+        var selectedDisciplines = _.map(disciplines, function (discipline) {
+          return { id:discipline['id'], text: discipline['description'] };
+        });
+
+        $discipline.select2({
+          data: selectedDisciplines
+        });
+      });
+    }
+  });
+
+  var updateFieldsBasedOnTestSetting = function() {
+    $.getJSON('/configuracoes-de-avaliacoes-numericas/' + $('#avaliation_test_setting_id').select2('val')).always(function(data) {
+      if ($.inArray(data.test_setting.exam_setting_type, ['general', 'general_by_school' ]) != -1){
+        $('.avaliation_test_setting').hide();
+      }
+
+      switch (data.test_setting.average_calculation_type) {
+        case "sum":
+          $('.avaliation_test_setting_test').show();
+          $('.avaliation_description').hide();
+          $('.avaliation_weight').hide();
+          break;
+
+        case "arithmetic":
+          $('.avaliation_test_setting_test').hide();
+          $('.avaliation_description').show();
+          $('.avaliation_weight').hide();
+          break;
+
+        case "arithmetic_and_sum":
+          $('.avaliation_description').show();
+          $('.avaliation_weight').show();
+          $('.avaliation_test_setting_test').hide();
+          break;
+
+        default:
+          console.log("Behavior not yet implemented for this average calculation type: " + data.test_setting.average_calculation_type);
+      }
+
+      $weight_input.attr('data-inputmask', "'digits': " + (parseInt(data['test_setting']['number_of_decimal_places']) || 0));
+      $weight_input.inputmask('customDecimal');
+    });
+
+    var params = { test_setting_id: $('#avaliation_test_setting_id').select2('val') };
+    window.testSettingTests = [];
+    if (_.isEmpty($('#avaliation_test_setting_id').select2('val'))) {
+      $('#avaliation_test_setting_test_id').val('');
+      $('#avaliation_test_setting_test_id').select2({ data: [] });
+    } else {
+      fetchTestSettingTests(params, function (testSettingTests) {
+        var selectedTestSettingTests = _.map(testSettingTests, function (testSettingTest) {
+          return { id: testSettingTest['id'], text: testSettingTest['description'] };
+        });
+
+        $('#avaliation_test_setting_test_id').select2({
+          data: selectedTestSettingTests
+        });
+      });
+    }
+  }
+
+  $('#avaliation_test_setting_id').on('change', function (e) {
+    updateFieldsBasedOnTestSetting();
+  });
+
+  var $test_setting_input = $('#avaliation_test_setting_test_id');
+  $test_setting_input.on('change', function(e) {
+    updateFieldsBaseOnTestSettingTest();
+  });
+
+  var $description_and_weight_div = $('#show_when_allow_break_up');
+  var $description_input = $('#avaliation_description');
+  var $weight_input = $('#avaliation_weight');
+
+  var updateFieldsBaseOnTestSettingTest = function() {
+    if (!document.getElementById('avaliation_test_setting_test_id') || _.isEmpty($test_setting_input.select2('val')) || $test_setting_input.select2('val') == 'empty') {
+      $('.avaliation_description').hide();
+      $('.avaliation_weight').hide();
+
+      return;
+    }
+
+    $.getJSON('/test_setting_tests/' + $test_setting_input.select2('val')).always(function(data) {
+      if (data.allow_break_up) {
+        $('.avaliation_description').show();
+        $('.avaliation_weight').show();
+      } else {
+        $('.avaliation_description').hide();
+        $('.avaliation_weight').hide();
+      }
+    });
+  }
+
+  if ($('#avaliation_grade_ids').data('elements').length == 2) {
+    $('.avaliation_grades').hide();
+  }
+
+  function initFields() {
+    if (!!document.getElementById('avaliation_test_setting_id')) {
+      updateFieldsBasedOnTestSetting();
+    }
+
+    if (!!document.getElementById('avaliation_weight')) {
+      updateFieldsBaseOnTestSettingTest();
+    }
+  }
+
+  $(document).ready(function(){
+    initFields();
+  });
+});

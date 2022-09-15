@@ -1,0 +1,32 @@
+<div class="widget-body no-padding">
+  <%= simple_form_for @daily_note, html: { class: "smart-form" } do |f| %>
+    <%= f.error_notification %>
+
+    <fieldset>
+      <div class="row">
+        <div class="col col-sm-4">
+          <%= f.input :unity_id, as: :select2_unity, user: current_user %>
+        </div>
+
+        <div class="col col-sm-4">
+          <%= f.input :classroom_id, as: :select2_classroom, user: current_user %>
+        </div>
+
+        <div class="col col-sm-4">
+          <%= f.input :discipline_id, as: :select2_discipline, user: current_user,
+                classroom_id: @daily_note.classroom_id %>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col col-sm-4">
+          <%= f.association :avaliation, as: :select2, elements: @avaliations.try(:data_for_select2) || {} %>
+        </div>
+      </div>
+
+    </fieldset>
+
+    <footer>
+      <%= f.submit 'Carregar', class: 'btn btn-primary', data: { disable_with: 'Carregando...'}  %>
+    </footer>
+  <% end %>
+</div>

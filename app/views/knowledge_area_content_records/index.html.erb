@@ -1,0 +1,42 @@
+<% content_for :js do %>
+  <%= javascript_include_tag 'views/knowledge_area_content_records/index' %>
+<% end %>
+<div class="widget-body no-padding">
+  <%= simple_form_for :filter, { url: knowledge_area_content_records_path, method: :get, html: { class: 'filterable_search_form' } } do |f| %>
+    <div class="table-responsive">
+      <table id="resources" class="table table-bordered table-only-inner-bordered table-striped table-condensed table-hover">
+        <thead>
+          <tr>
+            <td><%= f.input :by_classroom_description, label: false, placeholder: t('.by_classroom_description') %></td>
+            <td><%= f.input :by_knowledge_area_description, label: false, placeholder: t('.by_knowledge_area_description') %></td>
+            <td><%= f.input :by_date, as: :date, label: false, placeholder: t('.by_date') %></td>
+            <td>
+              <%= f.input :by_author, as: :select2_plans, label: false %>
+            </td>
+            <td>
+              <%= link_to t('.new_html'), new_knowledge_area_content_record_path,
+                class: 'btn btn-primary pull-right', style: 'width: 165px;' %>
+            </td>
+          </tr>
+
+          <tr>
+            <th><%= ContentRecord.human_attribute_name :classroom %></th>
+            <th><%= KnowledgeAreaContentRecord.human_attribute_name :knowledge_areas %>
+            <th><%= ContentRecord.human_attribute_name :record_date %></th>
+            <th width="10%"><%= KnowledgeAreaContentRecord.human_attribute_name :author %></th>
+            <td width="160px"></td>
+          </tr>
+        </thead>
+
+        <%= render 'resources' %>
+
+        <tfoot id="paginator" class="remote">
+          <td id="pagination-tfoot" colspan="5">
+            <%= render 'shared/pagination', records: @knowledge_area_content_records %>
+          </td>
+        </tfoot>
+      </table>
+    </div>
+  <% end %>
+</div>
+<%= render 'copy_knowledge_area_content_record_modal' %>

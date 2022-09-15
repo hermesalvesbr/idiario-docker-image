@@ -1,0 +1,22 @@
+default: &default
+  adapter: postgresql
+  encoding: utf8
+  pool: 50
+  username: postgres
+  password: postgres
+  host: localhost
+  # host: <%= ENV['DB_HOST'] %>
+
+
+production:
+  <<: *default
+  database: educacao
+
+development:
+  <<: *default
+  database: idiario_development
+
+test:
+  <<: *default
+  database: idiario_test
+
